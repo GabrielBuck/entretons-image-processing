@@ -3,7 +3,7 @@
  *
  * Nesta etapa: valida os argumentos, carrega a imagem, informa no terminal
  * se ela era colorida (convertida para cinza) ou já estava em cinza e mostra
- * as estatísticas do histograma.
+ * as estatísticas do histograma antes e depois da equalização.
  */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "equalization.h"
 #include "histogram.h"
 #include "image.h"
 #include "utils.h"
@@ -54,13 +55,26 @@ int main(int argc, char *argv[])
                hist.std_dev, histogram_brightness_label(hist.brightness),
                histogram_contrast_label(hist.contrast));
 
+    EqualizationState eq;
+    equalization_state_init(&eq, &gray);
+    if (!equalization_toggle(&eq)) {
+        utils_error("memória insuficiente para equalizar a imagem.");
+        equalization_state_free(&eq);
+        return 3;
+    }
+    histogram_compute(&hist, equalization_current(&eq));
+    utils_info("Equalizada: média %.2f, desvio padrão %.2f -> imagem %s, contraste %s.", hist.mean,
+               hist.std_dev, histogram_brightness_label(hist.brightness),
+               histogram_contrast_label(hist.contrast));
+    equalization_toggle(&eq); /* volta à original, sem recarregar o arquivo */
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         utils_error("não foi possível inicializar a SDL: %s", SDL_GetError());
-        gray_image_free(&gray);
+        equalization_state_free(&eq);
         return 3;
     }
 
     SDL_Quit();
-    gray_image_free(&gray);
+    equalization_state_free(&eq);
     return 0;
 }
