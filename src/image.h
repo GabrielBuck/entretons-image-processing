@@ -2,7 +2,8 @@
  * image.h - Imagem em escala de cinza e operações de arquivo.
  *
  * Responsabilidades: carregar e validar a imagem, detectar se ela é colorida
- * ou já está em escala de cinza, converter para cinza e copiar.
+ * ou já está em escala de cinza, converter para cinza, copiar, redimensionar
+ * (interpolação bilinear) e salvar em PNG.
  */
 #ifndef ENTRETONS_IMAGE_H
 #define ENTRETONS_IMAGE_H
@@ -13,6 +14,10 @@
 
 /* Limite de segurança: 64 milhões de pixels (ex.: 8000 x 8000). */
 #define IMAGE_MAX_PIXELS ((size_t)64 * 1000 * 1000)
+
+/* Resolução alternativa exibida pelo botão de resolução. */
+#define IMAGE_ALT_WIDTH 1024
+#define IMAGE_ALT_HEIGHT 768
 
 /* Coeficientes da conversão RGB -> cinza: Y = 0,2125 R + 0,7154 G + 0,0721 B. */
 #define LUMA_R 0.2125
@@ -50,5 +55,11 @@ void gray_image_free(GrayImage *img);
  * Em caso de erro retorna false e escreve uma mensagem em err (se não for NULL).
  */
 bool image_load(const char *path, GrayImage *out, ImageInfo *info, char *err, size_t err_size);
+
+/* Redimensiona src para width x height com interpolação bilinear. */
+bool image_resize(const GrayImage *src, int width, int height, GrayImage *dst);
+
+/* Salva a imagem em PNG (sobrescreve o arquivo existente). */
+bool image_save_png(const GrayImage *img, const char *path, char *err, size_t err_size);
 
 #endif /* ENTRETONS_IMAGE_H */

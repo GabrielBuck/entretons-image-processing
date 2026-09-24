@@ -172,3 +172,110 @@ bool image_load(const char *path, GrayImage *out, ImageInfo *info, char *err, si
     SDL_DestroySurface(rgba);
     return true;
 }
+
+/* ------------------------------------------------------------------------- */
+/* Redimensionamento bilinear                                                */
+/* ------------------------------------------------------------------------- */
+
+bool image_resize(const GrayImage *src, int width, int height, GrayImage *dst)
+{
+    if (src == NULL || src->pixels == NULL || width <= 0 || height <= 0) {
+        return false;
+    }
+    if (!gray_image_create(dst, width, height)) {
+        return false;
+    }
+
+    /* Tabelas por coluna: pixel vizinho da esquerda/direita e peso horizontal. */
+    int *x0 = malloc((size_t)width * sizeof *x0);
+    int *x1 = malloc((size_t)width * sizeof *x1);
+    float *fx = malloc((size_t)width * sizeof *fx);
+    if (x0 == NULL || x1 == NULL || fx == NULL) {
+        free(x0);
+        free(x1);
+        free(fx);
+        gray_image_free(dst);
+        return false;
+    }
+
+    const double scale_x = (double)src->width / (double)width;
+    const double scale_y = (double)src->height / (double)height;
+
+    for (int x = 0; x < width; x++) {
+        /* Alinha o centro dos pixels de origem e destino. */
+        double sx = ((double)x + 0.5) * scale_x - 0.5;
+        if (sx < 0.0) {
+            sx = 0.0;
+        }
+        if (sx > (double)(src->width - 1)) {
+            sx = (double)(src->width - 1);
+        }
+        x0[x] = (int)sx;
+        x1[x] = utils_clamp_int(x0[x] + 1, 0, src->width - 1);
+        fx[x] = (float)(sx - (double)x0[x]);
+    }
+
+    for (int y = 0; y < height; y++) {
+        double sy = ((double)y + 0.5) * scale_y - 0.5;
+        if (sy < 0.0) {
+            sy = 0.0;
+        }
+        if (sy > (double)(src->height - 1)) {
+            sy = (double)(src->height - 1);
+        }
+        int y0 = (int)sy;
+        int y1 = utils_clamp_int(y0 + 1, 0, src->height - 1);
+        float fy = (float)(sy - (double)y0);
+
+        const uint8_t *row0 = src->pixels + (size_t)y0 * (size_t)src->width;
+        const uint8_t *row1 = src->pixels + (size_t)y1 * (size_t)src->width;
+        uint8_t *out_row = dst->pixels + (size_t)y * (size_t)width;
+
+        for (int x = 0; x < width; x++) {
+            float top = (float)row0[x0[x]] + fx[x] * ((float)row0[x1[x]] - (float)row0[x0[x]]);
+            float bottom = (float)row1[x0[x]] + fx[x] * ((float)row1[x1[x]] - (float)row1[x0[x]]);
+            out_row[x] = utils_to_u8((double)(top + fy * (bottom - top)));
+        }
+    }
+
+    free(x0);
+    free(x1);
+    free(fx);
+    return true;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Salvamento                                                                */
+/* ------------------------------------------------------------------------- */
+
+bool image_save_png(const GrayImage *img, const char *path, char *err, size_t err_size)
+{
+    if (img == NULL || img->pixels == NULL) {
+        set_error(err, err_size, "não há imagem para salvar.");
+        return false;
+    }
+
+    SDL_Surface *surface = SDL_CreateSurface(img->width, img->height, SDL_PIXELFORMAT_RGB24);
+    if (surface == NULL) {
+        set_error(err, err_size, "não foi possível preparar a imagem para salvar: %s", SDL_GetError());
+        return false;
+    }
+
+    /* PNG em tons de cinza representado como RGB (R = G = B). */
+    for (int y = 0; y < img->height; y++) {
+        const uint8_t *src = img->pixels + (size_t)y * (size_t)img->width;
+        uint8_t *dst = (uint8_t *)surface->pixels + (size_t)y * (size_t)surface->pitch;
+        for (int x = 0; x < img->width; x++) {
+            dst[3 * x + 0] = src[x];
+            dst[3 * x + 1] = src[x];
+            dst[3 * x + 2] = src[x];
+        }
+    }
+
+    bool ok = IMG_SavePNG(surface, path);
+    if (!ok) {
+        set_error(err, err_size, "não foi possível salvar \"%s\": %s", path, SDL_GetError());
+    }
+    SDL_DestroySurface(surface);
+    return ok;
+}
