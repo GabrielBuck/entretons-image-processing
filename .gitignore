@@ -11,6 +11,9 @@
 # DLLs copiadas para rodar no Windows (make dlls)
 /*.dll
 
+# Configuração local do build (caminhos do SDL neste computador)
+/config.mk
+
 # Saída gerada pelo programa
 /output_image.png
 

@@ -18,6 +18,12 @@
 #   2) Senão, se o pkg-config enxergar sdl3, sdl3-image e sdl3-ttf, ele os usa
 #      (caso típico do MSYS2 e de instalações em /usr ou /usr/local no Linux).
 #   3) Senão, tenta -lSDL3 -lSDL3_image -lSDL3_ttf direto (caminhos padrão do GCC).
+#
+# Para não digitar os caminhos a cada vez, crie um arquivo "config.mk" (não é
+# versionado) ao lado deste Makefile com, por exemplo:
+#   SDL3_DIR       = C:/libs/SDL3-3.4.16/x86_64-w64-mingw32
+#   SDL3_IMAGE_DIR = C:/libs/SDL3_image-3.4.6/x86_64-w64-mingw32
+#   SDL3_TTF_DIR   = C:/libs/SDL3_ttf-3.2.2/x86_64-w64-mingw32
 # =============================================================================
 
 TARGET := entretons
@@ -45,6 +51,8 @@ override CPPFLAGS += -Isrc
 LDLIBS  := -lm
 
 # ----- Localização das bibliotecas SDL ---------------------------------------
+-include config.mk
+
 ifdef SDL_PREFIX
   SDL3_DIR       ?= $(SDL_PREFIX)
   SDL3_IMAGE_DIR ?= $(SDL_PREFIX)
