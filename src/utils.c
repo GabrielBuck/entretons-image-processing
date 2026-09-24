@@ -62,6 +62,16 @@ uint8_t utils_to_u8(double v)
     return (uint8_t)v;
 }
 
+void utils_format_number(char *dst, size_t dst_size, double v, int decimals)
+{
+    snprintf(dst, dst_size, "%.*f", decimals, v);
+    for (char *p = dst; *p != '\0'; p++) {
+        if (*p == '.') {
+            *p = ',';
+        }
+    }
+}
+
 const char *utils_basename(const char *path)
 {
     const char *name = path;

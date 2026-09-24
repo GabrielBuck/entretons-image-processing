@@ -36,6 +36,9 @@ int utils_clamp_int(int v, int lo, int hi);
 /* Converte um valor de ponto flutuante em intensidade 0..255 (arredonda e satura). */
 uint8_t utils_to_u8(double v);
 
+/* Formata v com o número de casas indicado, usando vírgula decimal (ex.: "127,50"). */
+void utils_format_number(char *dst, size_t dst_size, double v, int decimals);
+
 /* Retorna o nome do arquivo de um caminho (aceita '/' e '\'). */
 const char *utils_basename(const char *path);
 
