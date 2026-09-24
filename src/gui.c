@@ -54,10 +54,6 @@ static const SDL_Color COLOR_BUTTON_BORDER = {78, 84, 95, 255};
 #define STATUS_Y 632.0f
 #define FOOTER_Y 690.0f
 
-/* Espaço entre as janelas e folga em relação às bordas da tela. */
-#define WINDOW_GAP 12
-#define SCREEN_MARGIN 24
-
 #define FONT_RELATIVE_PATH "assets/fonts/DejaVuSans.ttf"
 
 typedef struct {
@@ -219,9 +215,10 @@ static bool upload_image(Gui *gui, const GrayImage *image)
 }
 
 /*
- * Ajusta o tamanho e a posição da janela principal: tamanho da imagem (reduzido
- * proporcionalmente só se não couber na tela) e centralizada na área à direita
- * da janela secundária.
+ * Ajusta o tamanho e a posição da janela principal para o tamanho da imagem
+ * exibida, centralizada no monitor principal. Se a janela (com moldura) não
+ * couber na resolução atual da tela, o canto superior esquerdo vai para
+ * (0, 0), como pede o enunciado.
  */
 static void layout_main_window(Gui *gui, int image_w, int image_h)
 {
@@ -231,31 +228,18 @@ static void layout_main_window(Gui *gui, int image_w, int image_h)
     int top = 0, left = 0, bottom = 0, right = 0;
     SDL_GetWindowBordersSize(gui->main_window, &top, &left, &bottom, &right);
 
-    int side_w = 0, side_h = 0;
-    SDL_GetWindowSize(gui->side_window, &side_w, &side_h);
+    const int win_w = image_w;
+    const int win_h = image_h;
+    const int frame_w = win_w + left + right;
+    const int frame_h = win_h + top + bottom;
 
-    const int area_x = usable.x + side_w + left + right + WINDOW_GAP;
-    const int area_w = usable.x + usable.w - area_x - SCREEN_MARGIN;
-    const int area_h = usable.h - top - bottom - 2 * SCREEN_MARGIN;
-
-    double scale = 1.0;
-    if (area_w > 0 && (double)image_w > (double)area_w) {
-        scale = (double)area_w / (double)image_w;
-    }
-    if (area_h > 0 && (double)image_h * scale > (double)area_h) {
-        scale = (double)area_h / (double)image_h;
-    }
-
-    int win_w = utils_clamp_int((int)lround((double)image_w * scale), 1, 100000);
-    int win_h = utils_clamp_int((int)lround((double)image_h * scale), 1, 100000);
-
-    int x = area_x + (area_w - win_w) / 2;
-    int y = usable.y + top + (usable.h - top - bottom - win_h) / 2;
-    if (x < area_x) {
-        x = area_x;
-    }
-    if (y < usable.y + top) {
-        y = usable.y + top;
+    int x, y;
+    if (frame_w > usable.w || frame_h > usable.h) {
+        x = left;
+        y = top;
+    } else {
+        x = usable.x + (usable.w - frame_w) / 2 + left;
+        y = usable.y + (usable.h - frame_h) / 2 + top;
     }
 
     SDL_SetRenderLogicalPresentation(gui->main_renderer, image_w, image_h,

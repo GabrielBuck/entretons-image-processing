@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
 
     /* 2) estado da aplicação: a original em cinza fica guardada para restaurar sem recarregar */
     App app = {0};
+    app.alt_resolution = true; /* a janela principal deve iniciar em 1024 x 768 (enunciado) */
     equalization_state_init(&app.equalization, &gray);
 
     /* 3) interface gráfica */
