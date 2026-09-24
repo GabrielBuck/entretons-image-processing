@@ -1,0 +1,10 @@
+# Código e texto: sempre LF, para o Makefile não quebrar no Git do Windows
+*.c   text eol=lf
+*.h   text eol=lf
+*.md  text eol=lf
+*.mk  text eol=lf
+Makefile text eol=lf
+
+# Binários: sem conversão de fim de linha
+*.png binary
+*.ttf binary
