@@ -20,9 +20,15 @@
 /* Configura o console do Windows para UTF-8 (acentos corretos). No Linux não faz nada. */
 void utils_enable_utf8_console(void);
 
-/* Mensagens no terminal. utils_error escreve em stderr. */
-void utils_info(const char *fmt, ...);
-void utils_error(const char *fmt, ...);
+#if defined(__GNUC__)
+#define UTILS_PRINTF_LIKE(fmt_index, first_arg) __attribute__((format(printf, fmt_index, first_arg)))
+#else
+#define UTILS_PRINTF_LIKE(fmt_index, first_arg)
+#endif
+
+/* Mensagens no terminal (formato printf). utils_error escreve em stderr. */
+void utils_info(const char *fmt, ...) UTILS_PRINTF_LIKE(1, 2);
+void utils_error(const char *fmt, ...) UTILS_PRINTF_LIKE(1, 2);
 
 /* Limita v ao intervalo [lo, hi]. */
 int utils_clamp_int(int v, int lo, int hi);

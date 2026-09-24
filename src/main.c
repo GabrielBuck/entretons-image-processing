@@ -1,7 +1,8 @@
 /*
  * main.c - Ponto de entrada do Entretons.
  *
- * Nesta etapa: valida os argumentos e inicializa a SDL3.
+ * Nesta etapa: valida os argumentos, carrega a imagem e informa no terminal
+ * se ela era colorida (convertida para cinza) ou já estava em cinza.
  */
 #include <SDL3/SDL.h>
 #include <SDL3/SDL_main.h>
@@ -9,6 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "image.h"
 #include "utils.h"
 
 static void print_usage(const char *program)
@@ -31,14 +33,26 @@ int main(int argc, char *argv[])
         return 1;
     }
 
+    GrayImage gray = {0};
+    ImageInfo info = {0};
+    char error[512];
+
+    if (!image_load(argv[1], &gray, &info, error, sizeof error)) {
+        utils_error("%s", error);
+        return 2;
+    }
+
+    utils_info("Imagem \"%s\": %d x %d pixels.", utils_basename(argv[1]), info.width, info.height);
+    utils_info(info.was_color ? "Imagem colorida: convertida para escala de cinza."
+                              : "Imagem já está em escala de cinza.");
+
     if (!SDL_Init(SDL_INIT_VIDEO)) {
         utils_error("não foi possível inicializar a SDL: %s", SDL_GetError());
+        gray_image_free(&gray);
         return 3;
     }
 
-    utils_info("SDL %d.%d.%d inicializada. Imagem: %s", SDL_MAJOR_VERSION, SDL_MINOR_VERSION,
-               SDL_MICRO_VERSION, argv[1]);
-
     SDL_Quit();
+    gray_image_free(&gray);
     return 0;
 }
