@@ -4,23 +4,28 @@
 
 #include "utils.h"
 
+/*
+ * s(k) = round((L - 1) * cdf(k) / (M * N)), como visto em aula (Gonzalez &
+ * Woods): a CDF acumulada da distribuição de probabilidades, escalada para
+ * 0..255. Não garante ocupar toda a faixa 0..255 para qualquer histograma
+ * (isso exigiria normalizar pelo cdf_min), mas é a fórmula ensinada.
+ */
 void equalization_build_lut(const Histogram *hist, uint8_t lut[HISTOGRAM_LEVELS])
 {
-    /* Sem pixels ou com um único nível de cinza não há o que equalizar: identidade. */
-    uint64_t cdf_min = 0;
     uint64_t cdf[HISTOGRAM_LEVELS];
     uint64_t running = 0;
+    int levels_present = 0;
 
     for (int k = 0; k < HISTOGRAM_LEVELS; k++) {
         running += hist->bins[k];
         cdf[k] = running;
-        if (cdf_min == 0 && running > 0) {
-            cdf_min = running;
+        if (hist->bins[k] > 0) {
+            levels_present++;
         }
     }
 
-    const uint64_t denominator = hist->total - cdf_min;
-    if (hist->total == 0 || denominator == 0) {
+    /* Sem pixels ou com um único nível de cinza não há o que equalizar: identidade. */
+    if (hist->total == 0 || levels_present <= 1) {
         for (int k = 0; k < HISTOGRAM_LEVELS; k++) {
             lut[k] = (uint8_t)k;
         }
@@ -28,12 +33,8 @@ void equalization_build_lut(const Histogram *hist, uint8_t lut[HISTOGRAM_LEVELS]
     }
 
     for (int k = 0; k < HISTOGRAM_LEVELS; k++) {
-        if (cdf[k] <= cdf_min) {
-            lut[k] = 0; /* níveis abaixo do menor presente e o próprio menor nível */
-        } else {
-            double s = 255.0 * (double)(cdf[k] - cdf_min) / (double)denominator;
-            lut[k] = utils_to_u8(s);
-        }
+        double s = 255.0 * (double)cdf[k] / (double)hist->total;
+        lut[k] = utils_to_u8(s);
     }
 }
 

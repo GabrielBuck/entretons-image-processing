@@ -220,7 +220,7 @@ static void test_classification_limits(void)
 static void test_equalization_lut(void)
 {
     puts("equalização: tabela de transformação");
-    /* níveis {0,0,1,1,1,2,3,3}: cdf = 2,5,6,8 -> s = 0, 127,5 (128), 170, 255 */
+    /* níveis {0,0,1,1,1,2,3,3}: cdf = 2,5,6,8 -> s = 255*cdf/8 = 63,75 (64), 159,375 (159), 191,25 (191), 255 */
     const uint8_t values[] = {0, 0, 1, 1, 1, 2, 3, 3};
     GrayImage img;
     make_gray(&img, 4, 2, values);
@@ -228,9 +228,9 @@ static void test_equalization_lut(void)
     histogram_compute(&h, &img);
     uint8_t lut[HISTOGRAM_LEVELS];
     equalization_build_lut(&h, lut);
-    CHECK(lut[0] == 0);
-    CHECK(lut[1] == 128);
-    CHECK(lut[2] == 170);
+    CHECK(lut[0] == 64);
+    CHECK(lut[1] == 159);
+    CHECK(lut[2] == 191);
     CHECK(lut[3] == 255);
     gray_image_free(&img);
 }
@@ -263,7 +263,7 @@ static void test_equalization_image(void)
     Histogram after;
     histogram_compute(&after, eq);
     CHECK(eq->width == W && eq->height == H);
-    CHECK(after.bins[0] > 0 && after.bins[255] > 0); /* ocupa toda a faixa */
+    CHECK(after.bins[255] > 0); /* o nível mais alto sempre mapeia para 255 */
     CHECK(after.std_dev > before.std_dev);
     CHECK(before.contrast == CONTRAST_LOW);
     CHECK(after.contrast == CONTRAST_HIGH);

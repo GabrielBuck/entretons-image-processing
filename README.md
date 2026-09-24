@@ -157,8 +157,8 @@ Nos pontos que ficaram em aberto, decidimos o seguinte:
 
 Deixamos os limiares em constantes documentadas em `src/histogram.h`, fáceis de ajustar.
 
-**Equalização**: implementamos a equalização clássica de histograma pela função de distribuição acumulada,
-`s(k) = round(255 * (cdf(k) - cdf_min) / (N - cdf_min))`, onde `N` é o total de pixels e `cdf_min` o menor valor não nulo da CDF. Uma imagem com um único nível de cinza não é alterada. Calculamos a versão equalizada uma vez e a guardamos.
+**Equalização**: implementamos a fórmula clássica de Gonzalez & Woods vista em aula,
+`s(k) = round(255 * cdf(k) / N)`, onde `cdf(k)` é a função de distribuição acumulada da imagem e `N` o total de pixels. Como exceção, uma imagem com um único nível de cinza não é alterada (a fórmula sozinha levaria todo mundo a 255, o que não faz sentido equalizar). Calculamos a versão equalizada uma vez e a guardamos.
 
 **1024 x 768**: interpolamos a imagem bilinearmente para exatamente 1024 x 768, preenchendo toda a janela. Se a imagem não tiver proporção 4:3, ela fica esticada.
 
