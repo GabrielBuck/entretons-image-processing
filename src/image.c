@@ -72,6 +72,28 @@ void gray_image_free(GrayImage *img)
 /* Carregamento                                                              */
 /* ------------------------------------------------------------------------- */
 
+/*
+ * true se a superfície é INDEX8 com paleta cinza praticamente igual à identidade
+ * (entrada i ~ nível i, com tolerância de 1). É o caso de PNG cinza de 8 bits.
+ */
+static bool surface_has_identity_gray_palette(const SDL_Surface *surface)
+{
+    if (surface->format != SDL_PIXELFORMAT_INDEX8) {
+        return false;
+    }
+    const SDL_Palette *palette = SDL_GetSurfacePalette((SDL_Surface *)surface);
+    if (palette == NULL || palette->ncolors != 256) {
+        return false;
+    }
+    for (int i = 0; i < 256; i++) {
+        const SDL_Color c = palette->colors[i];
+        if (c.r != c.g || c.g != c.b || abs((int)c.r - i) > 1) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* true se todos os pixels têm R == G == B (imagem já em tons de cinza). */
 static bool surface_is_gray(const SDL_Surface *rgba)
 {
@@ -146,30 +168,48 @@ bool image_load(const char *path, GrayImage *out, ImageInfo *info, char *err, si
         return false;
     }
 
-    /* Padroniza para RGBA32 (como nos exemplos da disciplina) antes de ler os pixels. */
-    SDL_Surface *rgba = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
-    SDL_DestroySurface(loaded);
-    if (rgba == NULL) {
-        set_error(err, err_size, "não foi possível converter a imagem para RGBA32: %s", SDL_GetError());
-        return false;
-    }
+    bool is_gray = false;
 
-    if (!gray_image_create(out, rgba->w, rgba->h)) {
+    if (surface_has_identity_gray_palette(loaded)) {
+        /*
+         * PNG cinza de 8 bits: a SDL_image entrega índices + paleta cinza que
+         * pode vir deslocada em 1 nível (ex.: 255 -> 254). O índice já é o nível
+         * de cinza, então ele é usado diretamente, sem passar pela paleta.
+         */
+        if (!gray_image_create(out, loaded->w, loaded->h)) {
+            set_error(err, err_size, "memória insuficiente para a imagem (%d x %d).", loaded->w, loaded->h);
+            SDL_DestroySurface(loaded);
+            return false;
+        }
+        for (int y = 0; y < loaded->h; y++) {
+            const uint8_t *src = (const uint8_t *)loaded->pixels + (size_t)y * (size_t)loaded->pitch;
+            memcpy(out->pixels + (size_t)y * (size_t)out->width, src, (size_t)loaded->w);
+        }
+        is_gray = true;
+        SDL_DestroySurface(loaded);
+    } else {
+        /* Padroniza para RGBA32 (como nos exemplos da disciplina) antes de ler os pixels. */
+        SDL_Surface *rgba = SDL_ConvertSurface(loaded, SDL_PIXELFORMAT_RGBA32);
+        SDL_DestroySurface(loaded);
+        if (rgba == NULL) {
+            set_error(err, err_size, "não foi possível converter a imagem para RGBA32: %s", SDL_GetError());
+            return false;
+        }
+        if (!gray_image_create(out, rgba->w, rgba->h)) {
+            set_error(err, err_size, "memória insuficiente para a imagem (%d x %d).", rgba->w, rgba->h);
+            SDL_DestroySurface(rgba);
+            return false;
+        }
+        is_gray = surface_is_gray(rgba);
+        surface_to_gray(rgba, is_gray, out);
         SDL_DestroySurface(rgba);
-        set_error(err, err_size, "memória insuficiente para a imagem (%d x %d).", rgba->w, rgba->h);
-        return false;
     }
-
-    bool is_gray = surface_is_gray(rgba);
-    surface_to_gray(rgba, is_gray, out);
 
     if (info != NULL) {
         info->width = out->width;
         info->height = out->height;
         info->was_color = !is_gray;
     }
-
-    SDL_DestroySurface(rgba);
     return true;
 }
 
