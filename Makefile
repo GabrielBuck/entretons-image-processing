@@ -88,7 +88,7 @@ src/%.o: src/%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
 run: $(TARGET)$(EXE)
-	$(TARGET)$(EXE) $(IMG)
+	./$(TARGET)$(EXE) $(IMG)
 
 $(TEST_BIN): tests/test_core.c $(CORE_SRC)
 	$(CC) $(CPPFLAGS) $(filter-out -MMD -MP,$(CFLAGS)) $^ -o $@ $(LDFLAGS) $(LDLIBS)
