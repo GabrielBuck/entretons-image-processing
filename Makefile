@@ -31,7 +31,20 @@ CC     := gcc
 
 ifeq ($(OS),Windows_NT)
   EXE  := .exe
-  NULL := nul
+  # O GNU Make para Windows assume SHELL=sh.exe mesmo quando esse
+  # executável não existe no PATH (ex.: mingw32-make chamado direto do
+  # PowerShell/cmd, sem MSYS2/Git Bash). Sem essa checagem, os alvos
+  # "clean" e "dlls" tentam usar rm/cp mesmo sem um shell POSIX de
+  # verdade disponível, e falham.
+  # "2>&1" (em vez de "2>nul" ou "2>/dev/null") funciona tanto no cmd
+  # quanto num shell POSIX, então essa checagem não cria um arquivo
+  # chamado "nul" por engano quando roda sob um sh.exe de verdade.
+  ifeq ($(findstring sh.exe,$(shell where sh.exe 2>&1)),sh.exe)
+    NULL := /dev/null
+  else
+    SHELL := cmd.exe
+    NULL  := nul
+  endif
 else
   EXE  :=
   NULL := /dev/null
