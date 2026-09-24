@@ -1,0 +1,20 @@
+# Objetos e dependências geradas pelo Makefile
+*.o
+*.d
+
+# Executáveis
+/entretons
+/entretons.exe
+/tests/test_core
+/tests/test_core.exe
+
+# DLLs copiadas para rodar no Windows (make dlls)
+/*.dll
+
+# Saída gerada pelo programa
+/output_image.png
+
+# Editor / sistema
+.vscode/
+.DS_Store
+Thumbs.db
