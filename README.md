@@ -163,7 +163,13 @@ make test
 
 Roda 137 verificações: fórmula de conversão para cinza, detecção colorida/cinza, erros de carregamento (arquivo inexistente, pasta, arquivo que não é imagem), histograma e limiares, equalização (inclusive restaurar a original), redimensionamento, PNG salvo e recarregado e funções auxiliares. Rode a partir da pasta do projeto, pois alguns testes usam `assets/samples`.
 
-Situação da validação: compilado sem avisos (`-Wall -Wextra -Wpedantic`) e testado no Linux com GCC 13.3 (janelas em display virtual, com cliques simulados) e com ASan/UBSan. O build no Windows (GCC 15.1.0) e no WSL Ubuntu com GCC 15.2.0 ainda precisa ser conferido nas máquinas do grupo.
+Situação da validação: compilado sem avisos (`-Wall -Wextra -Wpedantic`) em três ambientes:
+
+- **Linux** (Ubuntu 24.04, GCC 13.3): 137/137 testes, janelas em display virtual com cliques simulados, ASan/UBSan sem erros.
+- **Windows 11** (GCC 15.2.0, MinGW-w64 via MSYS2, `mingw32-make`): 137/137 testes, `entretons.exe` executado com `assets/samples/paisagem_cores.png`, janela secundária em (0, 0) com 440 x 720, acentos e "×" corretos com a fonte DejaVu Sans embutida, tecla S salvando `output_image.png`. As bibliotecas SDL3 3.4.16, SDL_image 3.4.6 e SDL_ttf 3.2.2 foram usadas nas versões `-devel-mingw` oficiais. Testado tanto rodando `mingw32-make` direto do PowerShell/cmd (sem MSYS2 no PATH) quanto do Git Bash/MSYS2.
+- **WSL Ubuntu 24.04.1** (GCC 13.3.0; não foi possível confirmar o Ubuntu 26.04/GCC 15.2.0 mencionado no enunciado do grupo, pois a distribuição instalada na máquina testada é a 24.04): SDL3, SDL_image e SDL_ttf compilados do fonte (não há pacotes `libsdl3-dev` no APT do 24.04), 137/137 testes, janela aberta via WSLg.
+
+Ainda não testado: escala do Windows em 125%/150%, cliques reais nos botões Equalizar/1024x768 no Windows (só a inicialização e o salvamento com a tecla S foram conferidos visualmente), e imagem com acento no caminho.
 
 ## Licenças
 
